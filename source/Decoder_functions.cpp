@@ -179,8 +179,7 @@ void PoAwN::decoding::ECN_EMS_L(const decoder_t &theta_1,
                                 const uint16_t coef,
                                 const uint16_t ucap_theta,
                                 const uint16_t ucap_phi,
-                                decoder_t &theta,
-                                vector<uint16_t> &Bt1)
+                                decoder_t &theta)
 {
     decoder_t phi_1_p = phi_1;
     bool rel_theta = (theta_1.intrinsic_LLR[dec_param.Zc] > phi_1.intrinsic_LLR[dec_param.Zc]);
@@ -241,25 +240,6 @@ void PoAwN::decoding::ECN_EMS_L(const decoder_t &theta_1,
         theta.intrinsic_GF[i] = temp_GF[i];
         theta.intrinsic_LLR[i] = temp_llr[temp_GF[i]];
     }
-
-    bool brk1 = false;
-    for (int i = 0; i < dec_param.nH; i++)
-    {
-        for (int j = 0; j < dec_param.nL; j++)
-        {
-            if ((rel_theta && a_gf[i] == ucap_theta && b_gf[j] == ucap_phi) ||
-                (!rel_theta && a_gf[i] == ucap_phi && b_gf[j] == ucap_theta))
-            {
-                Bt1[0] = i;
-                Bt1[1] = j;
-                brk1 = true;
-                break;
-            }
-        }
-        if (brk1)
-            break;
-    }
-    int aa = -1;
 }
 
 void PoAwN::decoding::ECN_PA(const decoder_t &theta_1,
@@ -679,13 +659,12 @@ void PoAwN::decoding::decode_SC_PA(const decoder_parameters &dec_param,
         info_sec_rec[i] = V[n][dec_param.reliab_sequence[i]];
 }
 
-void PoAwN::decoding::decode_SC_bubble_gen(const decoder_parameters &dec_param,
+void PoAwN::decoding::decode_SC(const decoder_parameters &dec_param,
                                            const vector<vector<uint16_t>> &ADDGF,
                                            const vector<vector<uint16_t>> &MULGF,
                                            const vector<vector<uint16_t>> &DIVGF,
                                            vector<vector<decoder_t>> &L,
-                                           vector<uint16_t> &info_sec_rec,
-                                           vector<vector<vector<vector<uint16_t>>>> &Bt)
+                                           vector<uint16_t> &info_sec_rec)
 {
     uint16_t MxUS = dec_param.MxUS, n = dec_param.n, N = dec_param.N;
     vector<vector<bool>> Roots(n + 1);
@@ -780,7 +759,7 @@ void PoAwN::decoding::decode_SC_bubble_gen(const decoder_parameters &dec_param,
                 temp_coef = dec_param.polar_coeff[n - l - 1][i3];
                 // if (l < n - 1)
                 ECN_EMS_L(L[l][Root[t]], L[l][Root[t + SZc1]], ADDGF, DIVGF, dec_param, temp_coef,
-                          dec_param.ucap[l][Root[t]], dec_param.ucap[l][Root[t + SZc1]], L[l + 1][Root[t]], Bt[l][s][t]);
+                          dec_param.ucap[l][Root[t]], dec_param.ucap[l][Root[t + SZc1]], L[l + 1][Root[t]]);
                 int aa = -1;
             }
             l = l + 1;
