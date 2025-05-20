@@ -18,29 +18,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 # Enable OpenMP for Sim2 only
-find_package(OpenMP REQUIRED)
 
 # Include header files
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)
 
-# Create Sim1 executable (without OpenMP)
-add_executable(Sim1
-    ${SOURCE_DIR}/simulator_decoding.cpp
-    ${SOURCE_DIR}/GF_tools.cpp
-    ${SOURCE_DIR}/init.cpp
-    ${SOURCE_DIR}/tools.cpp
-    ${SOURCE_DIR}/Decoder_functions.cpp
-    ${SOURCE_DIR}/channel.cpp
-)
-if(OpenMP_CXX_FOUND)
-    target_compile_options(Sim1 PRIVATE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(Sim1 PRIVATE OpenMP::OpenMP_CXX)
-endif()
 
 
-# Sim2 executable (with OpenMP)
 add_executable(Sim2
     ${SOURCE_DIR}/simulator_bubble_gen.cpp
     ${SOURCE_DIR}/GF_tools.cpp
@@ -50,8 +35,3 @@ add_executable(Sim2
     ${SOURCE_DIR}/channel.cpp
 )
 
-# Add OpenMP to Sim2 if found
-if(OpenMP_CXX_FOUND)
-    target_compile_options(Sim2 PRIVATE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(Sim2 PRIVATE OpenMP::OpenMP_CXX)
-endif()
