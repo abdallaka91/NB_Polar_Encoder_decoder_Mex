@@ -37,16 +37,14 @@ using std::stoi;
 using std::string;
 using std::vector;
 
-void NBPolarDecoder(const std::vector<double> &LLR_in,
-                    const uint16_t K,
-                    const std::vector<uint16_t> &reliab_sequence,
-                    const uint16_t nm,
-                    const double ofst,
-                    std::vector<uint16_t> &KSYMB)
+std::vector<uint16_t> NBPolarDecoder(const std::vector<double> &LLR_in,
+                                     const uint16_t K,
+                                     const std::vector<uint16_t> &reliab_sequence,
+                                     const uint16_t nm,
+                                     const double ofst)
 {
 
     uint16_t N = reliab_sequence.size();
-    KSYMB.resize(K, 0);
     string sig_mod = "CCSK_NB";
     uint16_t frozen_val = 0;
     uint16_t n = log2(N);
@@ -133,69 +131,44 @@ void NBPolarDecoder(const std::vector<double> &LLR_in,
     LLR_sort(chan_LLR, nm, L[0], dec_param.offset);
     vector<uint16_t> info_sec_rec(K, dec_param.MxUS);
     decode_SC(dec_param, table.ADDGF, table.MULGF, table.DIVGF, L, info_sec_rec);
+    return(info_sec_rec);
 }
 
-#include "mex.h"
-#include <vector>
-#include <cstdint>
+std::vector<uint16_t> NBPolarDecoder(const std::vector<double> &LLR_in,
+                                     const uint16_t K,
+                                     const std::vector<uint16_t> &reliab_sequence,
+                                     const uint16_t nm,
+                                     const double ofst);
 
-// Function declaration
-void NBPolarDecoder(const std::vector<double> &LLR_in,
-                    const uint16_t K,
-                    const std::vector<uint16_t> &reliab_sequence,
-                    const uint16_t nm,
-                    const double ofst,
-                    std::vector<uint16_t> &KSYMB);
-
-// Entry point for the MEX file
 void mexFunction(int nlhs, mxArray *plhs[],
                  int nrhs, const mxArray *prhs[])
 {
-    if (nrhs != 6)
-        mexErrMsgIdAndTxt("NBPolarDecoder_mex:invalidNumInputs", "Six input arguments required.");
-    if (nlhs != 1)
-        mexErrMsgIdAndTxt("NBPolarDecoder_mex:invalidNumOutputs", "One output required (KSYMB).");
+    if (nrhs != 5)
+        mexErrMsgIdAndTxt("NBPolarDecoder_mex:nrhs", "5 inputs required.");
+    if (nlhs > 1)
+        mexErrMsgIdAndTxt("NBPolarDecoder_mex:nlhs", "Too many output arguments.");
 
-    // Argument 0: LLR_in (vector<double>)
-    size_t len1 = mxGetNumberOfElements(prhs[0]);
-    if (!mxIsDouble(prhs[0]))
-        mexErrMsgIdAndTxt("NBPolarDecoder_mex:invalidLLR", "LLR_in must be of type double.");
-    double *LLR_ptr = mxGetPr(prhs[0]);
-    std::vector<double> LLR_in(LLR_ptr, LLR_ptr + len1);
+    // Input 0: LLR_in (double vector)
+    std::vector<double> LLR_in(mxGetPr(prhs[0]), mxGetPr(prhs[0]) + mxGetNumberOfElements(prhs[0]));
 
-    // Argument 1: K (uint16 scalar)
-    if (!mxIsUint16(prhs[1]) || mxGetNumberOfElements(prhs[1]) != 1)
-        mexErrMsgIdAndTxt("NBPolarDecoder_mex:invalidK", "K must be a scalar uint16.");
-    uint16_t K = *(uint16_t *)mxGetData(prhs[1]);
+    // Input 1: K (uint16 scalar)
+    uint16_t K = static_cast<uint16_t>(mxGetScalar(prhs[1]));
 
-    // Argument 2: reliab_sequence (vector<uint16_t>)
-    if (!mxIsUint16(prhs[2]))
-        mexErrMsgIdAndTxt("NBPolarDecoder_mex:invalidReliab", "reliab_sequence must be uint16.");
-    size_t len2 = mxGetNumberOfElements(prhs[2]);
+    // Input 2: reliab_sequence (uint16 vector)
     uint16_t *reliab_ptr = (uint16_t *)mxGetData(prhs[2]);
-    std::vector<uint16_t> reliab_sequence(reliab_ptr, reliab_ptr + len2);
+    size_t len_reliab = mxGetNumberOfElements(prhs[2]);
+    std::vector<uint16_t> reliab_sequence(reliab_ptr, reliab_ptr + len_reliab);
 
-    // Argument 3: nm (uint16 scalar)
-    if (!mxIsUint16(prhs[3]) || mxGetNumberOfElements(prhs[3]) != 1)
-        mexErrMsgIdAndTxt("NBPolarDecoder_mex:invalidNM", "nm must be a scalar uint16.");
-    uint16_t nm = *(uint16_t *)mxGetData(prhs[3]);
+    // Input 3: nm (uint16 scalar)
+    uint16_t nm = static_cast<uint16_t>(mxGetScalar(prhs[3]));
 
-    // Argument 4: ofst (double scalar)
-    if (!mxIsDouble(prhs[4]) || mxGetNumberOfElements(prhs[4]) != 1)
-        mexErrMsgIdAndTxt("NBPolarDecoder_mex:invalidOfst", "ofst must be a scalar double.");
+    // Input 4: ofst (double scalar)
     double ofst = mxGetScalar(prhs[4]);
 
-    // Argument 5: initial KSYMB (vector<uint16_t> - can be empty)
-    if (!mxIsUint16(prhs[5]))
-        mexErrMsgIdAndTxt("NBPolarDecoder_mex:invalidKSYMB", "KSYMB must be uint16.");
-    uint16_t *ksymb_ptr = (uint16_t *)mxGetData(prhs[5]);
-    size_t len3 = mxGetNumberOfElements(prhs[5]);
-    std::vector<uint16_t> KSYMB(ksymb_ptr, ksymb_ptr + len3);
+    // === Call your decoder function ===
+    std::vector<uint16_t> KSYMB = NBPolarDecoder(LLR_in, K, reliab_sequence, nm, ofst);
 
-    // Call the decoder function
-    NBPolarDecoder(LLR_in, K, reliab_sequence, nm, ofst, KSYMB);
-
-    // Return KSYMB to MATLAB
+    // === Return it to MATLAB ===
     plhs[0] = mxCreateNumericMatrix(1, KSYMB.size(), mxUINT16_CLASS, mxREAL);
     uint16_t *out_ptr = (uint16_t *)mxGetData(plhs[0]);
     std::copy(KSYMB.begin(), KSYMB.end(), out_ptr);
